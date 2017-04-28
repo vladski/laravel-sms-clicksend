@@ -1,0 +1,42 @@
+{
+    "name": "vladski/laravel-sms-clicksend",
+    "description": "ClickSend Notifications channel for Laravel 5.4.",
+    "keywords": ["laravel", "notifications", "clicksend", "sms"],
+    "homepage": "https://github.com/vladski/laravel-sms-clicksend",
+    "license": "MIT",
+    "authors": [
+        {
+            "name": "Vladimir Kundrat",
+            "role": "Developer",
+            "email": "vlado@12345.com.au",
+            "homepage": "https://github.com/vladski"
+        }
+    ],
+    "require": {
+        "php": ">=5.6.4",
+        "clicksend/clicksend-php": "4.0.*",
+        "illuminate/queue": "5.1.*|5.2.*|5.3.*|5.4.*",
+        "illuminate/notifications": "5.1.*|5.2.*|5.3.*|5.4.*",
+        "illuminate/support": "5.1.*|5.2.*|5.3.*|5.4.*"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "^5.2",
+        "mockery/mockery": "^0.9.5"
+    },
+    "autoload": {
+        "psr-4": {
+            "NotificationChannels\\ClickSend\\": "src"
+        }
+    },
+    "autoload-dev": {
+        "psr-4": {
+            "NotificationChannels\\ClickSend\\Test\\": "tests"
+        }
+    },
+    "config": {
+        "sort-packages": true
+    },
+    "scripts": {
+        "test": "vendor/bin/phpunit"
+    }
+}
