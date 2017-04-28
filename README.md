@@ -1,16 +1,7 @@
 # ClickSend notifications channel for Laravel 5.4+
 
-[![Latest Version on Packagist](https://img.shields.io/packagist/v/laravel-notification-channels/smsc-ru.svg?style=flat-square)](https://packagist.org/packages/laravel-notification-channels/smsc-ru)
-[![Software License](https://img.shields.io/badge/license-MIT-brightgreen.svg?style=flat-square)](LICENSE.md)
-[![Build Status](https://img.shields.io/travis/laravel-notification-channels/smsc-ru/master.svg?style=flat-square)](https://travis-ci.org/laravel-notification-channels/smsc-ru)
-[![StyleCI](https://styleci.io/repos/65589451/shield)](https://styleci.io/repos/65589451)
-[![SensioLabsInsight](https://img.shields.io/sensiolabs/i/aceefe27-ba5a-49d7-9064-bc3abea0abeb.svg?style=flat-square)](https://insight.sensiolabs.com/projects/aceefe27-ba5a-49d7-9064-bc3abea0abeb)
-[![Quality Score](https://img.shields.io/scrutinizer/g/laravel-notification-channels/smsc-ru.svg?style=flat-square)](https://scrutinizer-ci.com/g/laravel-notification-channels/smsc-ru)
-[![Code Coverage](https://img.shields.io/scrutinizer/coverage/g/laravel-notification-channels/smsc-ru/master.svg?style=flat-square)](https://scrutinizer-ci.com/g/laravel-notification-channels/smsc-ru/?branch=master)
-[![Total Downloads](https://img.shields.io/packagist/dt/laravel-notification-channels/smsc-ru.svg?style=flat-square)](https://packagist.org/packages/laravel-notification-channels/smsc-ru)
-
 This package makes it easy to send notifications using [clicksend.com](//clicksend.com) with Laravel 5.4+.
-Uses CLickSend Libarary - PHP API wrapper [https://github.com/ClickSend/clicksend-php]
+Uses ClickSend service provider libarary - PHP API wrapper [https://github.com/ClickSend/clicksend-php]
 
 ## Contents
 
@@ -28,13 +19,12 @@ Uses CLickSend Libarary - PHP API wrapper [https://github.com/ClickSend/clicksen
 
 ## Installation
 
-You can install the package via composer:
-
+Install the package via composer:
 ```bash
-composer require laravel-notification-channels/smsc-ru
+composer require vladski/laravel-sms-clicksend
 ```
 
-Then you must install the service provider:
+Install the service provider:
 ```php
 // config/app.php
 'providers' => [
@@ -45,30 +35,46 @@ Then you must install the service provider:
 
 ### Setting up the ClickSend service
 
-Add your ClickSend login, secret key (hashed password) and default sender name (or phone number) to your `config/services.php`:
+Add your ClickSend username, api_key and optional default sender sms_from to your `config/services.php`:
 
 ```php
 // config/services.php
 ...
 'clicksend' => [
-    'login'  => env('SMSCRU_LOGIN'),
-    'secret' => env('SMSCRU_SECRET'),
-    'sender' => 'John_Doe'
+	'username' => env('CLICKSEND_USERNAME'),
+	'api_key'  => env('CLICKSEND_API_KEY'),
+	'sms_from' => env('CLICKSEND_SMS_FROM'),
 ],
 ...
 ```
 
 ## Usage
 
-You can use the channel in your `via()` method inside the notification:
+Use the channel in your `via()` method inside the notification - see example:
 
 ```php
+
+namespace App\Notifications;
+
 use Illuminate\Notifications\Notification;
 use NotificationChannels\ClickSend\ClickSendMessage;
 use NotificationChannels\ClickSend\ClickSendChannel;
 
-class AccountApproved extends Notification
+class ClickSendTest extends Notification
 {
+
+    public $token;
+
+    /**
+     * Create a notification instance.
+     *
+     * @param string $token
+     */
+    public function __construct($token)
+    {
+        $this->token = $token;
+    }
+
     public function via($notifiable)
     {
         return [ClickSendChannel::class];
@@ -76,25 +82,25 @@ class AccountApproved extends Notification
 
     public function toClickSend($notifiable)
     {
-        return ClickSendMessage::create("Task #{$notifiable->id} is complete!");
+        return ClickSendMessage::create("SMS test to user #{$notifiable->id} with token {$this->token} by ClickSend");
     }
 }
 ```
-
-In your notifiable model, make sure to include a routeNotificationForSmsRu() method, which return the phone number.
+In notifiable model e.g. User, include a routeNotificationForClickSend() method, which returns recipient (user) mobile number:
 
 ```php
-public function routeNotificationForSmsRu()
+public function routeNotificationForClickSend()
 {
     return $this->phone;
 }
 ```
+### Available ClickSendMessage methods
 
-### Available methods
+`create($content)`: static method to initiate message with passed content
 
-`from()`: Sets the sender's name or phone number.
+`from($from)`: sets the sender's mobile number (available from service provider)
 
-`content()`: Sets a content of the notification message.
+`content($content)`: sets a content - any parameters used by notification to compose the message (along with notifiable model)
 
 ## Changelog
 
@@ -102,13 +108,10 @@ Please see [CHANGELOG](CHANGELOG.md) for more information what has changed recen
 
 ## Testing
 
+Incomplete
 ``` bash
 $ composer test
 ```
-
-## Security
-
-If you discover any security related issues, please email jhaoda@gmail.com instead of using the issue tracker.
 
 ## Contributing
 
@@ -116,7 +119,7 @@ Please see [CONTRIBUTING](CONTRIBUTING.md) for details.
 
 ## Credits
 
-- [JhaoDa](https://github.com/jhaoda)
+- [vladski](https://github.com/vladski)
 - [All Contributors](../../contributors)
 
 ## License
