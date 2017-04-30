@@ -108,15 +108,16 @@ public function routeNotificationForClickSend()
 ```
 From controller then send notification standard way:
 ```php
-	$user = User::find(1);
-	
-	try {
-		$user->notify(new ClickSendTest('ABC123'));
-	}
-	catch (\Exception $e) {
-		// do something when error
-		return $e->getMessage();
-	}
+
+$user = User::find(1);
+
+try {
+	$user->notify(new ClickSendTest('ABC123'));
+}
+catch (\Exception $e) {
+	// do something when error
+	return $e->getMessage();
+}
 ```
 
 ## Events
@@ -130,6 +131,7 @@ and this channel triggers one when submission fails for any reason:
 To listen to those events create listener classes in `app/Listeners` folder e.g. to log failed SMS:
 
 ```php
+
 namespace App\Listeners;
 	
 use Illuminate\Notifications\Events\NotificationFailed;
