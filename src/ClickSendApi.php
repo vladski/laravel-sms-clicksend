@@ -7,7 +7,6 @@
 
 namespace NotificationChannels\ClickSend;
 
-use DomainException;
 use NotificationChannels\ClickSend\Exceptions\CouldNotSendNotification;
 
 use ClickSendLib\ClickSendClient;
@@ -50,8 +49,7 @@ class ClickSendApi
      * @param $from
      * @param $to
      * @param $message
-     * @return mixed
-     * @throws CouldNotSendNotification
+     * @return array
      */
     public function sendSms($from, $to, $message)
     {
@@ -64,26 +62,38 @@ class ClickSendApi
             ]
         ]];
 
+        $result = [
+            'success' => false,
+            'message' => '',
+            'data'    => $payload['messages'][0],
+        ];
+
         try {
             $response = $this->client->getSMS()->sendSms($payload);
 
+            // communication error
             if($response->response_code != 'SUCCESS') {
-                throw new DomainException($response->response_code);
+                $result['message'] = $response->response_code;
+            }
+            // sending error
+            elseif ($response->data->messages[0]->status != 'SUCCESS') {
+                $result['message'] = $response->data->messages[0]->status;
+            }
+            else {
+                $result['success'] = true;
+                $result['message'] = 'Message sent successfully.';
             }
 
-            $result = $response->data->messages[0];
-
-            if ($result->status != 'SUCCESS') {
-                throw new DomainException($result->status);
-            }
-
-            return $response;
         }
-        catch (DomainException $exception) {
-            throw CouldNotSendNotification::clicksendRespondedWithAnError($exception);
-        }
+        // clicksend API error
         catch (APIException $exception) {
-            throw CouldNotSendNotification::couldNotCommunicateWithClicksend($exception);
+            $result['message'] = $exception->getReason();
         }
+        // any php error
+        catch (\Exception $exception) {
+            $result['message'] = $exception->getMessage();
+        }
+
+        return $result;
     }
 }

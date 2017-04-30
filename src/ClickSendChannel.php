@@ -2,42 +2,53 @@
 
 namespace NotificationChannels\ClickSend;
 
+use Illuminate\Events\Dispatcher;
 use Illuminate\Notifications\Notification;
-use NotificationChannels\ClickSend\Exceptions\CouldNotSendNotification;
+use Illuminate\Notifications\Events\NotificationFailed;
+
 
 class ClickSendChannel
 {
     /** @var \NotificationChannels\ClickSend\ClickSendApi */
-    protected $api;
+    protected $client;
 
-    public function __construct(ClickSendApi $api)
+    /** @var Dispatcher */
+    protected $events;
+
+    public function __construct(ClickSendApi $client, Dispatcher $events)
     {
-        $this->api = $api;
+        $this->client = $client;
+        $this->events = $events;
     }
 
     /**
-     * Send the given notification.
-     *
-     * @param  mixed  $notifiable
-     * @param  \Illuminate\Notifications\Notification  $notification
-     *
-     * @throws  \NotificationChannels\ClickSend\Exceptions\CouldNotSendNotification
+     * @param $notifiable
+     * @param Notification $notification
+     * @return array|mixed
      */
     public function send($notifiable, Notification $notification)
     {
         $to = $notifiable->routeNotificationForClicksend();
 
-        if (empty($to)) {
-            throw CouldNotSendNotification::missingRecipient();
-        }
-
         $message = $notification->toClickSend($notifiable);
 
-        if (is_string($message)) {
-            $message = new ClickSendMessage($message);
+        // always return object
+        if (is_string($message)) $message = new ClickSendMessage($message);
+
+        // array [success, message, data]
+        $result = $this->client->sendSms($message->from, $to, $message->content); //dd($result);
+
+        if (empty($result['success']))
+        {
+            $this->events->fire(
+                new NotificationFailed($notifiable, $notification, get_class($this), $result)
+            );
+
+            // by throwing exception NotificationSent event is not triggered and we trigger NotificationFailed above instead
+            throw new \Exception('Notification failed '.$result['message']);
         }
 
-        return $this->api->sendSms($message->from, $to, $message->content);
+        return $result;
     }
 
 }

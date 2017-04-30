@@ -6,9 +6,8 @@ Uses ClickSend service provider libarary - PHP API wrapper [https://github.com/C
 ## Contents
 
 - [Installation](#installation)
-    - [Setting up the ClickSend service](#setting-up-the-ClickSend-service)
 - [Usage](#usage)
-    - [Available Message methods](#available-message-methods)
+- [Events](#events)
 - [Changelog](#changelog)
 - [Testing](#testing)
 - [Security](#security)
@@ -24,21 +23,19 @@ Install the package via composer:
 composer require vladski/laravel-sms-clicksend
 ```
 
-Install the service provider:
+Add the service provider to `config/app.php`:
 ```php
-// config/app.php
+...
 'providers' => [
     ...
     NotificationChannels\ClickSend\ClickSendServiceProvider::class,
 ],
+...
 ```
-
-### Setting up the ClickSend service
 
 Add your ClickSend username, api_key and optional default sender sms_from to your `config/services.php`:
 
 ```php
-// config/services.php
 ...
 'clicksend' => [
 	'username' => env('CLICKSEND_USERNAME'),
@@ -50,10 +47,9 @@ Add your ClickSend username, api_key and optional default sender sms_from to you
 
 ## Usage
 
-Use the channel in your `via()` method inside the notification - see example:
+Use ClickSendChannel in `via()` method inside your notification classes. Example:
 
 ```php
-
 namespace App\Notifications;
 
 use Illuminate\Notifications\Notification;
@@ -82,25 +78,128 @@ class ClickSendTest extends Notification
 
     public function toClickSend($notifiable)
     {
-        return ClickSendMessage::create("SMS test to user #{$notifiable->id} with token {$this->token} by ClickSend");
+        // statically create message object:
+        
+        $message = ClickSendMessage::create("SMS test to user #{$notifiable->id} with token {$this->token} by ClickSend");
+        
+        // OR instantiate:
+        
+        $message = new ClickSendMessage("SMS test to user #{$notifiable->id} with token {$this->token} by ClickSend");
+        
+       	// available methods:
+       	
+       	$message->content("SMS test to user #{$notifiable->id} with token {$this->token} by ClickSend");
+       	$message->from('+6112345678'); // override sms_from from config
+       	
+       	return $message;
     }
 }
 ```
-In notifiable model e.g. User, include a routeNotificationForClickSend() method, which returns recipient (user) mobile number:
+
+In notifiable model (User), include method `routeNotificationForClickSend()` that returns recipient mobile number:
 
 ```php
+...
 public function routeNotificationForClickSend()
 {
     return $this->phone;
 }
+...
 ```
-### Available ClickSendMessage methods
+From controller then send notification standard way:
+```php
+	$user = User::find(1);
+	
+	try {
+		$user->notify(new ClickSendTest('ABC123'));
+	}
+	catch (\Exception $e) {
+		// do something when error
+		return $e->getMessage();
+	}
+```
 
-`create($content)`: static method to initiate message with passed content
+## Events
+Following events are triggered by Notification. By default:
+- Illuminate\Notifications\Events\NotificationSending
+- Illuminate\Notifications\Events\NotificationSent
 
-`from($from)`: sets the sender's mobile number (available from service provider)
+and this channel triggers one when submission fails for any reason:
+- Illuminate\Notifications\Events\NotificationFailed
 
-`content($content)`: sets a content - any parameters used by notification to compose the message (along with notifiable model)
+To listen to those events create listener classes in `app/Listeners` folder e.g. to log failed SMS:
+
+```
+namespace App\Listeners;
+	
+use Illuminate\Notifications\Events\NotificationFailed;
+use Illuminate\Queue\InteractsWithQueue;
+use Illuminate\Contracts\Queue\ShouldQueue;
+use Illuminate\Support\Facades\Log;
+use NotificationChannels\ClickSend\ClickSendChannel;
+	
+class NotificationFailedListener
+{
+    /**
+     * Create the event listener.
+     *
+     * @return void
+     */
+    public function __construct()
+    {
+        //
+    }
+
+    /**
+     * Notification failed event handler
+     *
+     * @param  NotificationFailed  $event
+     * @return void
+     */
+    public function handle(NotificationFailed $event)
+    {
+        // Handle fail event for ClickSend
+        //
+        if($event->channel == ClickSendChannel::class) {
+	
+            echo 'failed'; dump($event);
+            
+            $logData = [
+            	'notifiable'    => $event->notifiable->id,
+            	'notification'  => get_class($event->notification),
+            	'channel'       => $event->channel,
+            	'data'      => $event->data
+            	];
+            	
+            Log::error('Notification Failed', $logData);
+         }
+         // ... handle other channels ...
+    }
+}
+```
+ 
+ 
+ 
+Then register listeners in `app/Providers/EventServiceProvider.php`
+```
+...
+protected $listen = [
+
+	'Illuminate\Notifications\Events\NotificationFailed' => [
+		'App\Listeners\NotificationFailedListener',
+	],
+
+	'Illuminate\Notifications\Events\NotificationSent' => [
+		'App\Listeners\NotificationSentListener',
+	],
+
+	'Illuminate\Notifications\Events\NotificationSending' => [
+		'App\Listeners\NotificationSendingListener',
+	],
+];
+...
+```
+
 
 ## Changelog
 
