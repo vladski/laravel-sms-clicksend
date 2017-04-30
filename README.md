@@ -40,7 +40,7 @@ Add your ClickSend username, api_key and optional default sender sms_from to you
 'clicksend' => [
 	'username' => env('CLICKSEND_USERNAME'),
 	'api_key'  => env('CLICKSEND_API_KEY'),
-	'sms_from' => env('CLICKSEND_SMS_FROM'),
+	'sms_from' => env('CLICKSEND_SMS_FROM'), // optional
 ],
 ...
 ```
@@ -129,7 +129,7 @@ and this channel triggers one when submission fails for any reason:
 
 To listen to those events create listener classes in `app/Listeners` folder e.g. to log failed SMS:
 
-```
+```php
 namespace App\Listeners;
 	
 use Illuminate\Notifications\Events\NotificationFailed;
@@ -181,7 +181,7 @@ class NotificationFailedListener
  
  
 Then register listeners in `app/Providers/EventServiceProvider.php`
-```
+```php
 ...
 protected $listen = [
 
