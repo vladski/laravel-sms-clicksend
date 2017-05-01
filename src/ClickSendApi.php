@@ -12,9 +12,10 @@ use NotificationChannels\ClickSend\Exceptions\CouldNotSendNotification;
 use ClickSendLib\ClickSendClient;
 use ClickSendLib\APIException;
 
+
 class ClickSendApi
 {
-    /** @var client */
+    /** @var ClickSendClient client */
     protected $client;
 
     /** @var string */
@@ -96,4 +97,16 @@ class ClickSendApi
 
         return $result;
     }
+
+
+    /**
+     * Return Client for accessing all other api functions
+     *
+     * @return ClickSendClient
+     */
+    public function getClient()
+    {
+        return $this->client;
+    }
+
 }

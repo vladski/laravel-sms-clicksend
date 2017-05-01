@@ -1,16 +1,16 @@
 # ClickSend notifications channel for Laravel 5.4+
 
 This package makes it easy to send notifications using [clicksend.com](//clicksend.com) with Laravel 5.4+.
-Uses ClickSend service provider libarary - PHP API wrapper [https://github.com/ClickSend/clicksend-php]
+Uses ClickSend PHP API wrapper [https://github.com/ClickSend/clicksend-php]
 
 ## Contents
 
 - [Installation](#installation)
 - [Usage](#usage)
 - [Events](#events)
+- [Api Client](#api-client)
 - [Changelog](#changelog)
 - [Testing](#testing)
-- [Security](#security)
 - [Contributing](#contributing)
 - [Credits](#credits)
 - [License](#license)
@@ -202,6 +202,20 @@ protected $listen = [
 ...
 ```
 
+
+## API Client
+
+To access the rest of ClickSend API you can get client from ClickSendApi:
+```php
+$client = app(ClickSendApi::class)->getClient();
+	
+// then get for eaxample yor ClickSend account details:
+$account =  $client->getAccount()->getAccount();
+	
+// or list of countries:
+$countries =  $client->getCountries()->getCountries();
+
+```
 
 ## Changelog
 
